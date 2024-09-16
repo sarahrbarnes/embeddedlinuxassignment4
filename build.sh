@@ -26,8 +26,26 @@ then
 		make -C buildroot defconfig BR2_EXTERNAL=${EXTERNAL_REL_BUILDROOT} BR2_DEFCONFIG=${AESD_DEFAULT_DEFCONFIG}
 	fi
 else
-	echo "USING EXISTING BUILDROOT CONFIG"
-	echo "To force update, delete .config or make changes using make menuconfig and build again."
-	make -C buildroot BR2_EXTERNAL=${EXTERNAL_REL_BUILDROOT}
+
+  # Run the first make command and check for errors
+  if ! make -C buildroot BR2_EXTERNAL=${EXTERNAL_REL_BUILDROOT}; then
+    echo "First make command failed. Copying files..."
+
+    # Copy the necessary files
+    cp ./configure.ac buildroot/output/build/host-util-linux-2.37.4/
+    cp ./pidfd-utils.h buildroot/output/build/host-util-linux-2.37.4/include
+
+    echo "Files copied. Running make again..."
+
+    # Run the make command again
+    if ! make -C buildroot BR2_EXTERNAL=${EXTERNAL_REL_BUILDROOT}; then
+        echo "Second make command failed. Exiting."
+        exit 1
+    else
+        echo "Second make command succeeded."
+    fi
+  else
+    echo "First make command succeeded. No need to run the second make command."
+  fi
 
 fi
